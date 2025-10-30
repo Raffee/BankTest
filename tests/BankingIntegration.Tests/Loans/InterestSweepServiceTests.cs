@@ -1,6 +1,7 @@
-using BankingIntegration.Domain.Loans;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BankingIntegration.Domain.Loans;
 
 namespace BankingIntegration.Tests.Loans;
 
@@ -21,8 +22,10 @@ public class InterestSweepServiceTests
             settlementAccountId: "SET-001",
             principalAccountId: "PRN-001",
             period: new DateOnly(2025, 1, 31),
-            servicedInterestDue: 250m,
-            retainedInterestDue: 100m,
+            totalInterestDue: 350m,
+            interestRate: 0.07m,
+            retainedRatePortion: 0.02m,
+            servicedRatePortion: 0.05m,
             transactionChannel: "INTEREST REPAYMENT");
 
         // Act
@@ -63,8 +66,10 @@ public class InterestSweepServiceTests
             settlementAccountId: "SET-002",
             principalAccountId: "PRN-002",
             period: new DateOnly(2025, 3, 31),
-            servicedInterestDue: 250m,
-            retainedInterestDue: 0m,
+            totalInterestDue: 250m,
+            interestRate: 0.07m,
+            retainedRatePortion: 0m,
+            servicedRatePortion: 0.07m,
             transactionChannel: "INTEREST REPAYMENT");
 
         // Act
@@ -96,8 +101,10 @@ public class InterestSweepServiceTests
             settlementAccountId: "SET-003",
             principalAccountId: "PRN-003",
             period: new DateOnly(2025, 5, 31),
-            servicedInterestDue: 250m,
-            retainedInterestDue: 100m,
+            totalInterestDue: 350m,
+            interestRate: 0.07m,
+            retainedRatePortion: 0.02m,
+            servicedRatePortion: 0.05m,
             transactionChannel: "INTEREST REPAYMENT");
 
         // Act

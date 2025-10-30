@@ -17,7 +17,7 @@ dotnet run --project src/BankingIntegration.Api
 
 The service hosts a webhook at `POST /webhooks/interest-repayment-due`.
 
-When the webhook is triggered, the API now retrieves the latest settlement and principal ledger movements (filtered by the configured transaction channel) to determine outstanding arrears and the available balance. Only the current month's retained and serviced interest amounts need to be supplied by the caller.
+When the webhook is triggered, the API retrieves the latest settlement and principal ledger movements (filtered by the configured transaction channel) to determine outstanding arrears and the available balance. It also queries the loan details service for the nominal interest rate and the retained/serviced rate portions so it can split the total interest due that the caller supplies.
 
 ## Sample webhook payload
 
@@ -27,8 +27,7 @@ When the webhook is triggered, the API now retrieves the latest settlement and p
   "settlementAccountId": "SET-1001",
   "principalAccountId": "PRN-2001",
   "period": "2025-03-31",
-  "servicedInterestDue": 250.0,
-  "retainedInterestDue": 0.0,
+  "totalInterestDue": 250.0,
   "transactionChannel": "INTEREST REPAYMENT"
 }
 ```
@@ -67,6 +66,7 @@ dotnet test
 
 ## Key business rules
 
+- The caller supplies a single total-interest-due amount; the service derives retained and serviced components using the loan's configured rate split.
 - Retained interest is swept first because funds are already held within the settlement account.
 - Serviced interest is swept up to the remaining available balance.
 - Any shortfall is reported as outstanding serviced interest, marking the loan in arrears.

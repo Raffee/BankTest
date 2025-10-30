@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using BankingIntegration.Api.Services;
 using BankingIntegration.Domain.Loans;
 
 namespace BankingIntegration.Api.Contracts;
@@ -18,20 +19,24 @@ public sealed record InterestRepaymentDueRequest
     public DateOnly Period { get; init; }
 
     [Range(0, double.MaxValue)]
-    public decimal ServicedInterestDue { get; init; }
-
-    [Range(0, double.MaxValue)]
-    public decimal RetainedInterestDue { get; init; }
+    public decimal TotalInterestDue { get; init; }
 
     [Required]
     public string TransactionChannel { get; init; } = "INTEREST REPAYMENT";
 
-    public InterestRepaymentDueCommand ToCommand() => new(
-        LoanId,
-        SettlementAccountId,
-        PrincipalAccountId,
-        Period,
-        ServicedInterestDue,
-        RetainedInterestDue,
-        TransactionChannel);
+    public InterestRepaymentDueCommand ToCommand(LoanDetails loanDetails)
+    {
+        ArgumentNullException.ThrowIfNull(loanDetails);
+
+        return new InterestRepaymentDueCommand(
+            LoanId,
+            SettlementAccountId,
+            PrincipalAccountId,
+            Period,
+            TotalInterestDue,
+            loanDetails.InterestRate,
+            loanDetails.RetainedRatePortion,
+            loanDetails.ServicedRatePortion,
+            TransactionChannel);
+    }
 }

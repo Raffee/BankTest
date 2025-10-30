@@ -10,8 +10,10 @@ public sealed record InterestRepaymentDueCommand
         string settlementAccountId,
         string principalAccountId,
         DateOnly period,
-        decimal servicedInterestDue,
-        decimal retainedInterestDue,
+        decimal totalInterestDue,
+        decimal interestRate,
+        decimal retainedRatePortion,
+        decimal servicedRatePortion,
         string transactionChannel)
     {
         if (loanId == Guid.Empty)
@@ -27,14 +29,29 @@ public sealed record InterestRepaymentDueCommand
             ? principalAccountId
             : throw new ArgumentException("Principal account identifier must be provided.", nameof(principalAccountId));
 
-        if (servicedInterestDue < 0)
+        if (totalInterestDue < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(servicedInterestDue), servicedInterestDue, "Serviced interest due cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(totalInterestDue), totalInterestDue, "Total interest due cannot be negative.");
         }
 
-        if (retainedInterestDue < 0)
+        if (interestRate <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(retainedInterestDue), retainedInterestDue, "Retained interest due cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(interestRate), interestRate, "Interest rate must be greater than zero.");
+        }
+
+        if (retainedRatePortion < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(retainedRatePortion), retainedRatePortion, "Retained rate portion cannot be negative.");
+        }
+
+        if (servicedRatePortion < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(servicedRatePortion), servicedRatePortion, "Serviced rate portion cannot be negative.");
+        }
+
+        if (retainedRatePortion + servicedRatePortion > interestRate + 0.0000001m)
+        {
+            throw new ArgumentException("Retained and serviced rate portions cannot exceed the total interest rate.");
         }
 
         TransactionChannel = !string.IsNullOrWhiteSpace(transactionChannel)
@@ -43,8 +60,10 @@ public sealed record InterestRepaymentDueCommand
 
         LoanId = loanId;
         Period = period;
-        ServicedInterestDue = servicedInterestDue;
-        RetainedInterestDue = retainedInterestDue;
+        TotalInterestDue = totalInterestDue;
+        InterestRate = interestRate;
+        RetainedRatePortion = retainedRatePortion;
+        ServicedRatePortion = servicedRatePortion;
     }
 
     public Guid LoanId { get; }
@@ -55,9 +74,13 @@ public sealed record InterestRepaymentDueCommand
 
     public DateOnly Period { get; }
 
-    public decimal ServicedInterestDue { get; }
+    public decimal TotalInterestDue { get; }
 
-    public decimal RetainedInterestDue { get; }
+    public decimal InterestRate { get; }
+
+    public decimal RetainedRatePortion { get; }
+
+    public decimal ServicedRatePortion { get; }
 
     public string TransactionChannel { get; }
 }

@@ -8,6 +8,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddScoped<ITransactionApiClient, TransactionApiClient>();
 builder.Services.AddScoped<ILoanInterestSnapshotProvider, LoanInterestSnapshotProvider>();
+builder.Services.AddScoped<ILoanDetailsClient, LoanDetailsClient>();
 builder.Services.AddScoped<IInterestSweepService, InterestSweepService>();
 
 var app = builder.Build();
@@ -24,13 +25,16 @@ app.MapGet("/", () => Results.Ok(new { Status = "Banking integration API is runn
 
 app.MapPost("/webhooks/interest-repayment-due", async (
     InterestRepaymentDueRequest request,
+    ILoanDetailsClient loanDetailsClient,
     IInterestSweepService sweepService,
     ILogger<Program> logger,
     CancellationToken cancellationToken) =>
 {
     try
     {
-        var result = await sweepService.CalculateSweepAsync(request.ToCommand(), cancellationToken).ConfigureAwait(false);
+        var loanDetails = await loanDetailsClient.GetLoanAsync(request.LoanId, cancellationToken).ConfigureAwait(false);
+        var command = request.ToCommand(loanDetails);
+        var result = await sweepService.CalculateSweepAsync(command, cancellationToken).ConfigureAwait(false);
         logger.LogInformation(
             "Processed interest repayment webhook for loan {LoanId} and period {Period}. Serviced swept {ServicedSwept}, retained swept {RetainedSwept}.",
             result.LoanId,

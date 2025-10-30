@@ -41,8 +41,10 @@ public class LoanInterestSnapshotProviderTests
             settlementAccountId: settlementAccountId,
             principalAccountId: principalAccountId,
             period: new DateOnly(2025, 1, 31),
-            servicedInterestDue: 250m,
-            retainedInterestDue: 100m,
+            totalInterestDue: 350m,
+            interestRate: 0.07m,
+            retainedRatePortion: 0.02m,
+            servicedRatePortion: 0.05m,
             transactionChannel: channel);
 
         var snapshot = await provider.GetSnapshotAsync(command);

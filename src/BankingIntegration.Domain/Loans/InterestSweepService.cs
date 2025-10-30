@@ -24,7 +24,9 @@ public sealed class InterestSweepService : IInterestSweepService
         var transactions = new List<TransactionInstruction>();
         var settlementBalance = snapshot.SettlementBalance;
 
-        var totalRetainedOwed = RoundAmount(command.RetainedInterestDue + snapshot.RetainedInterestOutstanding);
+        var (retainedDue, servicedDue) = CalculateDueComponents(command);
+
+        var totalRetainedOwed = RoundAmount(retainedDue + snapshot.RetainedInterestOutstanding);
         var retainedSweep = Math.Min(totalRetainedOwed, settlementBalance);
         settlementBalance = RoundAmount(settlementBalance - retainedSweep);
         var retainedOutstanding = RoundAmount(totalRetainedOwed - retainedSweep);
@@ -40,7 +42,7 @@ public sealed class InterestSweepService : IInterestSweepService
                 $"Retained interest sweep for {command.Period:yyyy-MM}"));
         }
 
-        var totalServicedOwed = RoundAmount(command.ServicedInterestDue + snapshot.ServicedInterestOutstanding);
+    var totalServicedOwed = RoundAmount(servicedDue + snapshot.ServicedInterestOutstanding);
         var servicedSweep = Math.Min(totalServicedOwed, settlementBalance);
         settlementBalance = RoundAmount(settlementBalance - servicedSweep);
         var servicedOutstanding = RoundAmount(totalServicedOwed - servicedSweep);
@@ -70,4 +72,27 @@ public sealed class InterestSweepService : IInterestSweepService
 
     private static decimal RoundAmount(decimal amount)
         => decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
+
+    private static (decimal retainedDue, decimal servicedDue) CalculateDueComponents(InterestRepaymentDueCommand command)
+    {
+        if (command.TotalInterestDue == 0)
+        {
+            return (0m, 0m);
+        }
+
+    var baseAmount = command.TotalInterestDue / command.InterestRate;
+
+        var retainedDue = RoundAmount(baseAmount * command.RetainedRatePortion);
+        var servicedDue = RoundAmount(baseAmount * command.ServicedRatePortion);
+
+        var totalComputed = RoundAmount(retainedDue + servicedDue);
+        var remainder = RoundAmount(command.TotalInterestDue - totalComputed);
+
+        if (remainder != 0)
+        {
+            servicedDue = RoundAmount(servicedDue + remainder);
+        }
+
+        return (retainedDue, servicedDue);
+    }
 }
